@@ -5,9 +5,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def create_ssh_tunnel(hostname, local_socket, remote_socket):
-    ssh_socket_filename = gen_temp_socket_filename(
-        f"ssh-tunnel-to-{hostname}-ssh-sock-", ".sock"
-    )
+    ssh_socket_filename = gen_temp_socket_filename(f"{hostname}.")
     ssh_tunnel_cmd = [
         "ssh",
         "-qfN",
