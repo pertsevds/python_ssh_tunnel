@@ -38,6 +38,7 @@ def create_ssh_tunnel(hostname, local_socket, remote_socket):
     finally:
         try:
             subprocess.run(ssh_tunnel_terminate_cmd)
+            os.remove(local_socket)
         except subprocess.CalledProcessError:
             pass
 
