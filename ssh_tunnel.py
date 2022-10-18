@@ -1,14 +1,26 @@
+import logging
+import os
 import subprocess
 import tempfile
 from contextlib import contextmanager
+from typing import Generator, Optional
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+
+class SSHTunnelConnectionError(Exception):
+    pass
 
 
 @contextmanager
-def create_ssh_tunnel(hostname, local_socket, remote_socket):
+def create_ssh_tunnel(
+    hostname: str, local_socket: str, remote_socket: str, timeout: int = 10
+) -> Generator[str, None, None]:
     ssh_socket_filename = gen_temp_socket_filename(f"{hostname}.")
     ssh_tunnel_cmd = [
         "ssh",
-        "-qfN",
+        "-fN",
         "-M",
         "-S",
         ssh_socket_filename,
@@ -26,7 +38,6 @@ def create_ssh_tunnel(hostname, local_socket, remote_socket):
     ]
     ssh_tunnel_terminate_cmd = [
         "ssh",
-        "-q",
         "-S",
         ssh_socket_filename,
         "-O",
@@ -34,16 +45,41 @@ def create_ssh_tunnel(hostname, local_socket, remote_socket):
         hostname,
     ]
     try:
-        yield subprocess.run(ssh_tunnel_cmd, check=True)
+        logger.debug(f"Execute cmd: {' '.join(ssh_tunnel_cmd)}")
+        subprocess.run(
+            ssh_tunnel_cmd,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout,
+        )
+        yield ssh_socket_filename
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as ex:
+        logger.exception(
+            f"Exception occurred when trying to open SSH tunnel:\n{ex}",
+            exc_info=False,
+        )
+        raise SSHTunnelConnectionError(ex) from ex
     finally:
         try:
-            subprocess.run(ssh_tunnel_terminate_cmd)
+            logger.debug(
+                f"Execute cmd: {' '.join(ssh_tunnel_terminate_cmd)}",
+            )
+            subprocess.run(
+                ssh_tunnel_terminate_cmd,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            logger.debug("Deleting socket file")
             os.remove(local_socket)
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
 
 
-def gen_temp_socket_filename(prefix=None, suffix=None):
+def gen_temp_socket_filename(
+    prefix: Optional[str] = None, suffix: Optional[str] = None
+) -> str:
     temp_socket_filename = None
     with tempfile.NamedTemporaryFile(
         suffix=suffix, prefix=prefix, dir=tempfile.gettempdir()
@@ -51,5 +87,4 @@ def gen_temp_socket_filename(prefix=None, suffix=None):
         temp_socket_filename = tmpfile.name
     if temp_socket_filename is not None:
         return temp_socket_filename
-    else:
-        raise RuntimeError("Unable to create temp file")
+    raise RuntimeError("Unable to create temp file")
