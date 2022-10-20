@@ -1,3 +1,4 @@
+"""Ports and sockets forwarding tunnel over SSH with systems SSH client."""
 import logging
 import os
 import subprocess
@@ -10,13 +11,14 @@ logger.addHandler(logging.NullHandler())
 
 
 class SSHTunnelConnectionError(Exception):
-    pass
+    """Connection error exception."""
 
 
 @contextmanager
 def create_ssh_tunnel(
     hostname: str, local_socket: str, remote_socket: str, timeout: int = 10
 ) -> Generator[str, None, None]:
+    """Create SSH tunnel."""
     ssh_socket_filename = gen_temp_socket_filename(f"{hostname}.")
     ssh_tunnel_cmd = [
         "ssh",
@@ -80,6 +82,7 @@ def create_ssh_tunnel(
 def gen_temp_socket_filename(
     prefix: Optional[str] = None, suffix: Optional[str] = None
 ) -> str:
+    """Get filename for temporary socket file."""
     temp_socket_filename = None
     with tempfile.NamedTemporaryFile(
         suffix=suffix, prefix=prefix, dir=tempfile.gettempdir()
