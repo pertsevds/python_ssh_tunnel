@@ -47,7 +47,7 @@ def create_ssh_tunnel(
         hostname,
     ]
     try:
-        logger.debug(f"Execute cmd: {' '.join(ssh_tunnel_cmd)}")
+        logger.debug(f"Executing cmd: {' '.join(ssh_tunnel_cmd)}.")
         subprocess.run(
             ssh_tunnel_cmd,
             check=True,
@@ -58,14 +58,14 @@ def create_ssh_tunnel(
         yield ssh_socket_filename
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as ex:
         logger.exception(
-            f"Exception occurred when trying to open SSH tunnel:\n{ex}",
+            f"Exception occurred when trying to open SSH tunnel:\n{ex}.",
             exc_info=False,
         )
         raise SSHTunnelConnectionError(ex) from ex
     finally:
         try:
             logger.debug(
-                f"Execute cmd: {' '.join(ssh_tunnel_terminate_cmd)}",
+                f"Executing cmd: {' '.join(ssh_tunnel_terminate_cmd)}.",
             )
             subprocess.run(
                 ssh_tunnel_terminate_cmd,
@@ -73,7 +73,7 @@ def create_ssh_tunnel(
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            logger.debug("Deleting socket file")
+            logger.debug("Deleting socket file.")
             os.remove(local_socket)
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
@@ -90,4 +90,4 @@ def gen_temp_socket_filename(
         temp_socket_filename = tmpfile.name
     if temp_socket_filename is not None:
         return temp_socket_filename
-    raise RuntimeError("Unable to create temp file")
+    raise RuntimeError("Unable to create temp file.")
